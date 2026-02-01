@@ -1,48 +1,1036 @@
 <!DOCTYPE html>
-<html lang="ka">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Veo - Echoes of History</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOS — Interactive Generative Universe</title>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=Noto+Serif+Georgian:wght@400;500;600;700&display=swap');
-      
-      body {
-        font-family: 'Noto Sans Georgian', sans-serif;
-      }
-      
-      .font-serif-georgian {
-        font-family: 'Noto Serif Georgian', serif;
-      }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&family=JetBrains+Mono:wght@300;400&display=swap');
 
-      /* Custom Scrollbar for the dark theme */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #1a1110; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #4a3b32; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #c5a059; 
-      }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #000000;
+            --accent: #6c63ff;
+            --accent2: #00f5d4;
+            --accent3: #ff6b6b;
+            --text: #e0e0e0;
+            --dim: #555;
+            --glass: rgba(255,255,255,0.03);
+            --glass-border: rgba(255,255,255,0.06);
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            cursor: crosshair;
+            user-select: none;
+        }
+
+        canvas#universe {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        canvas#overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ui-layer {
+            position: fixed;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .ui-layer * { pointer-events: auto; }
+
+        .top-bar {
+            top: 0; left: 0; right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+        }
+
+        .logo {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo span {
+            font-weight: 200;
+            letter-spacing: 3px;
+            opacity: 0.6;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--dim);
+        }
+
+        .stat-val { color: var(--accent2); font-weight: 400; }
+
+        .control-panel {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .ctrl-btn {
+            width: 44px; height: 44px;
+            border: none;
+            background: transparent;
+            color: var(--dim);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 18px;
+            position: relative;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+
+        .ctrl-btn.active {
+            background: linear-gradient(135deg, rgba(108,99,255,0.3), rgba(0,245,212,0.2));
+            color: var(--accent2);
+            box-shadow: 0 0 20px rgba(108,99,255,0.2);
+        }
+
+        .ctrl-btn .tooltip {
+            position: absolute;
+            bottom: 54px;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: rgba(0,0,0,0.9);
+            border: 1px solid var(--glass-border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .ctrl-btn:hover .tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .divider {
+            width: 1px;
+            background: var(--glass-border);
+            margin: 6px 4px;
+        }
+
+        .side-info {
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .mode-label {
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--dim);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+        }
+
+        .center-msg {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            text-align: center;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1.5s ease;
+        }
+
+        .center-msg.hidden { opacity: 0; }
+
+        .center-msg h1 {
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: 16px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #fff, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .center-msg p {
+            font-size: 13px;
+            color: var(--dim);
+            letter-spacing: 3px;
+            font-weight: 300;
+        }
+
+        .center-msg .keys {
+            margin-top: 30px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .key-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 11px;
+            color: var(--dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .key-hint kbd {
+            background: rgba(108,99,255,0.2);
+            color: var(--accent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .audio-bar {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 40px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .audio-bar.visible { opacity: 1; }
+
+        .audio-bar-segment {
+            width: 3px;
+            background: linear-gradient(to top, var(--accent), var(--accent2));
+            border-radius: 2px;
+            transition: height 0.05s;
+            min-height: 2px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 100;
+            padding: 10px 24px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text);
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .palette-picker {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            z-index: 15;
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.85);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .palette-picker.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .palette-swatch {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .palette-swatch:hover { transform: scale(1.2); }
+
+        .palette-swatch.active {
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.3);
+        }
+
+        .loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
+            transition: opacity 0.8s ease;
+        }
+
+        .loader.done { opacity: 0; pointer-events: none; }
+
+        .loader-ring {
+            width: 50px; height: 50px;
+            border: 2px solid var(--glass-border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-text {
+            font-size: 11px;
+            letter-spacing: 4px;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+
+        .flash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #fff;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        .flash.active { opacity: 0.3; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
-  }
-}
-</script>
 </head>
-  <body class="bg-[#0f0a0a] text-[#e5d5c0] antialiased overflow-x-hidden">
-    <div id="root"></div>
-  </body>
+<body>
+
+<div class="loader" id="loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Initializing Universe</div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<canvas id="universe"></canvas>
+<canvas id="overlay"></canvas>
+
+<div class="center-msg" id="centerMsg">
+    <h1>COSMOS</h1>
+    <p>Interactive Generative Universe</p>
+    <div class="keys">
+        <span class="key-hint"><kbd>Click</kbd> Create</span>
+        <span class="key-hint"><kbd>Drag</kbd> Orbit</span>
+        <span class="key-hint"><kbd>Scroll</kbd> Zoom</span>
+        <span class="key-hint"><kbd>Space</kbd> Pulse</span>
+        <span class="key-hint"><kbd>R</kbd> Random Supernova</span>
+        <span class="key-hint"><kbd>G</kbd> Gravity Well</span>
+        <span class="key-hint"><kbd>1-6</kbd> Modes</span>
+    </div>
+</div>
+
+<div class="ui-layer top-bar">
+    <div class="logo">COSMOS <span>v&#8734;</span></div>
+    <div class="stats">
+        <span>PARTICLES <span class="stat-val" id="statParticles">0</span></span>
+        <span>FPS <span class="stat-val" id="statFPS">0</span></span>
+        <span>BODIES <span class="stat-val" id="statBodies">0</span></span>
+        <span>ENERGY <span class="stat-val" id="statEnergy">0</span></span>
+    </div>
+</div>
+
+<div class="ui-layer side-info">
+    <div class="mode-label" id="modeLabel">NEBULA</div>
+</div>
+
+<div class="ui-layer control-panel">
+    <button class="ctrl-btn active" data-mode="nebula" id="btnNebula">&#10022;<span class="tooltip">Nebula Mode</span></button>
+    <button class="ctrl-btn" data-mode="galaxy" id="btnGalaxy">&#9678;<span class="tooltip">Galaxy Mode</span></button>
+    <button class="ctrl-btn" data-mode="blackhole" id="btnBlackhole">&#9673;<span class="tooltip">Black Hole</span></button>
+    <button class="ctrl-btn" data-mode="supernova" id="btnSupernova">&#10040;<span class="tooltip">Supernova</span></button>
+    <button class="ctrl-btn" data-mode="dna" id="btnDna">&#10774;<span class="tooltip">DNA Helix</span></button>
+    <button class="ctrl-btn" data-mode="wormhole" id="btnWormhole">&#8856;<span class="tooltip">Wormhole</span></button>
+    <div class="divider"></div>
+    <button class="ctrl-btn" id="btnAudio">&#9834;<span class="tooltip">Toggle Sound</span></button>
+    <button class="ctrl-btn" id="btnPalette">&#9684;<span class="tooltip">Color Theme</span></button>
+    <button class="ctrl-btn" id="btnScreenshot">&#8865;<span class="tooltip">Screenshot</span></button>
+    <button class="ctrl-btn" id="btnTimeSlow">&#9719;<span class="tooltip">Slow Motion</span></button>
+    <button class="ctrl-btn" id="btnClear">&#8855;<span class="tooltip">Clear Universe</span></button>
+</div>
+
+<div class="audio-bar" id="audioBar"></div>
+
+<div class="palette-picker" id="palettePicker">
+    <div class="palette-swatch active" data-palette="cosmic" style="background: linear-gradient(135deg, #6c63ff, #00f5d4)"></div>
+    <div class="palette-swatch" data-palette="fire" style="background: linear-gradient(135deg, #ff6b6b, #ffd93d)"></div>
+    <div class="palette-swatch" data-palette="ocean" style="background: linear-gradient(135deg, #0077b6, #00f5d4)"></div>
+    <div class="palette-swatch" data-palette="aurora" style="background: linear-gradient(135deg, #06d6a0, #9b5de5)"></div>
+    <div class="palette-swatch" data-palette="sunset" style="background: linear-gradient(135deg, #f72585, #ffd60a)"></div>
+    <div class="palette-swatch" data-palette="mono" style="background: linear-gradient(135deg, #ffffff, #666666)"></div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+(() => {
+'use strict';
+
+const MAX_PARTICLES = 150000;
+const INITIAL_STARS = 3000;
+const TAU = Math.PI * 2;
+const G = 0.5;
+
+const PALETTES = {
+    cosmic: { a: [108,99,255], b: [0,245,212], c: [255,107,107], d: [255,217,61] },
+    fire:   { a: [255,107,107], b: [255,217,61], c: [255,150,50], d: [255,80,80] },
+    ocean:  { a: [0,119,182], b: [0,245,212], c: [72,202,228], d: [144,224,239] },
+    aurora: { a: [6,214,160], b: [155,93,229], c: [0,245,212], d: [118,200,147] },
+    sunset: { a: [247,37,133], b: [255,214,10], c: [255,107,107], d: [181,23,158] },
+    mono:   { a: [255,255,255], b: [180,180,180], c: [120,120,120], d: [220,220,220] },
+};
+
+const state = {
+    mode: 'nebula', palette: 'cosmic', timeScale: 1,
+    audioOn: false, paletteOpen: false,
+    mouseX: 0, mouseY: 0, mouseDown: false,
+    mouseDragX: 0, mouseDragY: 0,
+    camRotX: 0.3, camRotY: 0, camZoom: 600,
+    totalEnergy: 0, interactionCount: 0,
+};
+
+const px = new Float32Array(MAX_PARTICLES);
+const py = new Float32Array(MAX_PARTICLES);
+const pz = new Float32Array(MAX_PARTICLES);
+const vx = new Float32Array(MAX_PARTICLES);
+const vy = new Float32Array(MAX_PARTICLES);
+const vz = new Float32Array(MAX_PARTICLES);
+const pr = new Float32Array(MAX_PARTICLES);
+const pg = new Float32Array(MAX_PARTICLES);
+const pb = new Float32Array(MAX_PARTICLES);
+const pa = new Float32Array(MAX_PARTICLES);
+const ps = new Float32Array(MAX_PARTICLES);
+const pl = new Float32Array(MAX_PARTICLES);
+const pd = new Float32Array(MAX_PARTICLES);
+const pt = new Uint8Array(MAX_PARTICLES);
+let particleCount = 0;
+
+const bodies = [];
+
+const canvas = document.getElementById('universe');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const octx = overlay.getContext('2d');
+
+let W, H, cX, cY;
+
+function resize() {
+    W = canvas.width = overlay.width = window.innerWidth;
+    H = canvas.height = overlay.height = window.innerHeight;
+    cX = W / 2; cY = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- Audio ---
+let audioCtx, analyser, audioData, oscillators = [];
+
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.8;
+    audioData = new Uint8Array(analyser.frequencyBinCount);
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.08;
+    masterGain.connect(audioCtx.destination);
+    masterGain.connect(analyser);
+    const types = ['sine', 'sine', 'triangle'];
+    const freqs = [55, 82.5, 110];
+    types.forEach((type, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freqs[i]; gain.gain.value = 0.03;
+        osc.connect(gain); gain.connect(masterGain); osc.start();
+        oscillators.push({ osc, gain });
+    });
+    const audioBar = document.getElementById('audioBar');
+    for (let i = 0; i < 32; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'audio-bar-segment';
+        audioBar.appendChild(seg);
+    }
+}
+
+function playNote(freq, duration = 0.3, type = 'sine') {
+    if (!audioCtx || !state.audioOn) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(analyser); osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+function updateAudioVisualizer() {
+    const bar = document.getElementById('audioBar');
+    if (!state.audioOn || !analyser) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    analyser.getByteFrequencyData(audioData);
+    const segments = bar.children;
+    const step = Math.floor(audioData.length / segments.length);
+    for (let i = 0; i < segments.length; i++) {
+        const val = audioData[i * step] || 0;
+        segments[i].style.height = (2 + val * 0.15) + 'px';
+    }
+}
+
+// --- Math ---
+function rand(min = 0, max = 1) { return Math.random() * (max - min) + min; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function lerpColor(c1, c2, t) { return [lerp(c1[0],c2[0],t), lerp(c1[1],c2[1],t), lerp(c1[2],c2[2],t)]; }
+
+function paletteColor(t) {
+    const pal = PALETTES[state.palette];
+    t = ((t % 1) + 1) % 1;
+    if (t < 0.33) return lerpColor(pal.a, pal.b, t / 0.33);
+    if (t < 0.66) return lerpColor(pal.b, pal.c, (t - 0.33) / 0.33);
+    return lerpColor(pal.c, pal.d, (t - 0.66) / 0.34);
+}
+
+// --- 3D ---
+function project(x, y, z) {
+    const cosY = Math.cos(state.camRotY), sinY = Math.sin(state.camRotY);
+    let rx = x * cosY - z * sinY, rz = x * sinY + z * cosY;
+    const cosX = Math.cos(state.camRotX), sinX = Math.sin(state.camRotX);
+    let ry = y * cosX - rz * sinX; rz = y * sinX + rz * cosX;
+    const d = state.camZoom, scale = d / (d + rz + 500);
+    return { x: cX + rx * scale, y: cY + ry * scale, scale, z: rz };
+}
+
+// --- Particles ---
+function addParticle(x, y, z, velX, velY, velZ, color, size, life, decay, type = 1) {
+    if (particleCount >= MAX_PARTICLES) {
+        let oldest = -1;
+        for (let i = 0; i < particleCount; i++) { if (pt[i] !== 0) { oldest = i; break; } }
+        if (oldest === -1) return;
+        const idx = oldest;
+        px[idx]=x;py[idx]=y;pz[idx]=z;vx[idx]=velX;vy[idx]=velY;vz[idx]=velZ;
+        pr[idx]=color[0];pg[idx]=color[1];pb[idx]=color[2];
+        pa[idx]=1;ps[idx]=size;pl[idx]=life;pd[idx]=decay;pt[idx]=type;
+        return;
+    }
+    const i = particleCount++;
+    px[i]=x;py[i]=y;pz[i]=z;vx[i]=velX;vy[i]=velY;vz[i]=velZ;
+    pr[i]=color[0];pg[i]=color[1];pb[i]=color[2];
+    pa[i]=1;ps[i]=size;pl[i]=life;pd[i]=decay;pt[i]=type;
+}
+
+function spawnStars(count) {
+    for (let i = 0; i < count; i++) {
+        const theta = rand(0, TAU), phi = rand(-Math.PI/2, Math.PI/2), r = rand(200, 1200);
+        const x = Math.cos(phi)*Math.cos(theta)*r, y = Math.cos(phi)*Math.sin(theta)*r, z = Math.sin(phi)*r;
+        const b = rand(0.3, 1);
+        addParticle(x, y, z, 0, 0, 0, [b*255, b*255, b*255], rand(0.5, 2), 1, 0, 0);
+    }
+}
+
+// --- Emitters ---
+function emitNebula(cx, cy, cz, count = 200) {
+    const t0 = rand(0, 1);
+    for (let i = 0; i < count; i++) {
+        const theta = rand(0, TAU), phi = rand(-Math.PI, Math.PI), speed = rand(0.2, 1.5);
+        const col = paletteColor(t0 + rand(-0.1, 0.1));
+        addParticle(
+            cx + Math.cos(theta)*Math.cos(phi)*rand(0,10),
+            cy + Math.sin(theta)*rand(0,10),
+            cz + Math.sin(phi)*rand(0,10),
+            Math.cos(theta)*Math.cos(phi)*speed, Math.sin(theta)*speed*0.5, Math.sin(phi)*speed,
+            col, rand(1,4), 1, rand(0.002,0.008), 1);
+    }
+    playNote(220 + rand(0,220), 0.5, 'sine');
+}
+
+function emitGalaxy(cx, cy, cz, count = 500) {
+    const arms = 4;
+    for (let i = 0; i < count; i++) {
+        const arm = Math.floor(rand(0, arms));
+        const angle = (arm/arms)*TAU + rand(-0.3,0.3), dist = rand(5,120);
+        const spiral = angle + dist*0.04;
+        const x = cx + Math.cos(spiral)*dist, z = cz + Math.sin(spiral)*dist;
+        const y = cy + rand(-3,3)*(1-dist/140);
+        const speed = 0.8/(dist*0.05+1);
+        const col = paletteColor(dist/120);
+        addParticle(x,y,z, -Math.sin(spiral)*speed, rand(-0.05,0.05), Math.cos(spiral)*speed, col, rand(1,3), 1, rand(0.001,0.004), 1);
+    }
+    playNote(110, 1, 'triangle');
+}
+
+function emitBlackHole(cx, cy, cz) {
+    bodies.push({ x:cx, y:cy, z:cz, mass:200, life:1, decay:0.0005, type:'blackhole' });
+    for (let i = 0; i < 800; i++) {
+        const angle = rand(0,TAU), dist = rand(30,100);
+        const x = cx+Math.cos(angle)*dist, z = cz+Math.sin(angle)*dist, y = cy+rand(-2,2);
+        const speed = 3/Math.sqrt(dist*0.1+1);
+        const col = paletteColor(rand(0,1));
+        addParticle(x,y,z, -Math.sin(angle)*speed, 0, Math.cos(angle)*speed, col, rand(1,2.5), 1, rand(0.001,0.003), 1);
+    }
+    playNote(55, 2, 'sawtooth');
+}
+
+function emitSupernova(cx, cy, cz, count = 1500) {
+    for (let i = 0; i < count; i++) {
+        const theta = rand(0,TAU), phi = rand(-Math.PI,Math.PI), speed = rand(1,8);
+        addParticle(cx,cy,cz, Math.cos(theta)*Math.cos(phi)*speed, Math.sin(theta)*speed, Math.sin(phi)*speed,
+            paletteColor(rand(0,1)), rand(1,5), 1, rand(0.003,0.01), 1);
+    }
+    for (let i = 0; i < 200; i++) {
+        const angle = (i/200)*TAU;
+        addParticle(cx,cy,cz, Math.cos(angle)*6, 0, Math.sin(angle)*6, [255,255,255], 3, 1, 0.015, 2);
+    }
+    playNote(880, 0.5, 'sawtooth'); playNote(440, 0.8, 'square');
+}
+
+function emitDNA(cx, cy, cz, count = 600) {
+    for (let i = 0; i < count; i++) {
+        const t = (i/count)*8*Math.PI, h = (i/count-0.5)*200, strand = i%2;
+        const x = cx+Math.cos(t+strand*Math.PI)*30, z = cz+Math.sin(t+strand*Math.PI)*30, y = cy+h;
+        addParticle(x,y,z, rand(-0.1,0.1),rand(-0.1,0.1),rand(-0.1,0.1), paletteColor(i/count), rand(1.5,3), 1, rand(0.002,0.005), 1);
+        if (i%20===0 && strand===0) {
+            for (let j=0;j<8;j++) {
+                const rt=j/8;
+                const rx=lerp(cx+Math.cos(t)*30, cx+Math.cos(t+Math.PI)*30, rt);
+                const rz=lerp(cz+Math.sin(t)*30, cz+Math.sin(t+Math.PI)*30, rt);
+                addParticle(rx,y,rz, 0,0,0, [255,255,255], 1.5, 1, rand(0.003,0.006), 1);
+            }
+        }
+    }
+    playNote(330, 0.6, 'sine'); playNote(440, 0.6, 'sine');
+}
+
+function emitWormhole(cx, cy, cz) {
+    bodies.push({ x:cx, y:cy, z:cz, mass:-150, life:1, decay:0.0008, type:'wormhole' });
+    for (let i = 0; i < 1000; i++) {
+        const theta = rand(0,TAU), phi = rand(0,TAU), R = 60, r = 15;
+        const x = cx+(R+r*Math.cos(phi))*Math.cos(theta);
+        const y = cy+r*Math.sin(phi);
+        const z = cz+(R+r*Math.cos(phi))*Math.sin(theta);
+        const speed = rand(0.5,2);
+        addParticle(x,y,z, -Math.sin(theta)*speed, rand(-0.5,0.5), Math.cos(theta)*speed,
+            paletteColor(theta/TAU), rand(1,3), 1, rand(0.002,0.005), 1);
+    }
+    playNote(165, 1.5, 'sine');
+}
+
+function spawnAtMouse(sx, sy) {
+    const nx = (sx-cX)/(state.camZoom*0.5), ny = (sy-cY)/(state.camZoom*0.5);
+    const cosY = Math.cos(-state.camRotY), sinY = Math.sin(-state.camRotY);
+    const x = nx*cosY*200, z = nx*sinY*200, y = ny*200;
+    state.interactionCount++;
+    switch (state.mode) {
+        case 'nebula': emitNebula(x,y,z); break;
+        case 'galaxy': emitGalaxy(x,y,z); break;
+        case 'blackhole': emitBlackHole(x,y,z); break;
+        case 'supernova': emitSupernova(x,y,z); break;
+        case 'dna': emitDNA(x,y,z); break;
+        case 'wormhole': emitWormhole(x,y,z); break;
+    }
+}
+
+// --- Physics ---
+function updatePhysics(dt) {
+    const ts = dt * state.timeScale;
+    for (let b = bodies.length-1; b >= 0; b--) {
+        bodies[b].life -= bodies[b].decay * ts * 60;
+        if (bodies[b].life <= 0) bodies.splice(b, 1);
+    }
+    let energy = 0, writeIdx = 0;
+    for (let i = 0; i < particleCount; i++) {
+        if (pt[i] === 0) {
+            pa[i] = 0.4 + Math.sin(Date.now()*0.003+i)*0.3;
+            if (writeIdx !== i) {
+                px[writeIdx]=px[i];py[writeIdx]=py[i];pz[writeIdx]=pz[i];
+                vx[writeIdx]=vx[i];vy[writeIdx]=vy[i];vz[writeIdx]=vz[i];
+                pr[writeIdx]=pr[i];pg[writeIdx]=pg[i];pb[writeIdx]=pb[i];
+                pa[writeIdx]=pa[i];ps[writeIdx]=ps[i];pl[writeIdx]=pl[i];
+                pd[writeIdx]=pd[i];pt[writeIdx]=pt[i];
+            }
+            writeIdx++; continue;
+        }
+        pl[i] -= pd[i]*ts*60;
+        if (pl[i] <= 0) continue;
+        for (let b = 0; b < bodies.length; b++) {
+            const dx=bodies[b].x-px[i], dy=bodies[b].y-py[i], dz=bodies[b].z-pz[i];
+            const distSq = dx*dx+dy*dy+dz*dz+100, dist = Math.sqrt(distSq);
+            const force = (G*bodies[b].mass*bodies[b].life)/distSq;
+            vx[i]+=(dx/dist)*force*ts; vy[i]+=(dy/dist)*force*ts; vz[i]+=(dz/dist)*force*ts;
+        }
+        vx[i]*=0.999; vy[i]*=0.999; vz[i]*=0.999;
+        px[i]+=vx[i]*ts*60; py[i]+=vy[i]*ts*60; pz[i]+=vz[i]*ts*60;
+        pa[i] = pl[i]*pl[i];
+        energy += vx[i]*vx[i]+vy[i]*vy[i]+vz[i]*vz[i];
+        if (writeIdx !== i) {
+            px[writeIdx]=px[i];py[writeIdx]=py[i];pz[writeIdx]=pz[i];
+            vx[writeIdx]=vx[i];vy[writeIdx]=vy[i];vz[writeIdx]=vz[i];
+            pr[writeIdx]=pr[i];pg[writeIdx]=pg[i];pb[writeIdx]=pb[i];
+            pa[writeIdx]=pa[i];ps[writeIdx]=ps[i];pl[writeIdx]=pl[i];
+            pd[writeIdx]=pd[i];pt[writeIdx]=pt[i];
+        }
+        writeIdx++;
+    }
+    particleCount = writeIdx;
+    state.totalEnergy = energy;
+}
+
+// --- Render ---
+function render() {
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (let i = 0; i < particleCount; i++) {
+        const p = project(px[i], py[i], pz[i]);
+        if (p.scale <= 0.01) continue;
+        const alpha = pa[i] * clamp(p.scale, 0, 1);
+        if (alpha < 0.01) continue;
+        const size = ps[i] * p.scale;
+        const r = Math.round(pr[i]), g = Math.round(pg[i]), b = Math.round(pb[i]);
+
+        if (pt[i] === 0) {
+            ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+            ctx.fillRect(p.x-size*0.5, p.y-size*0.5, size, size);
+        } else if (size > 2.5) {
+            const gradient = ctx.createRadialGradient(p.x,p.y,0, p.x,p.y,size*2);
+            gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+            gradient.addColorStop(0.4, `rgba(${r},${g},${b},${alpha*0.4})`);
+            gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(p.x-size*2, p.y-size*2, size*4, size*4);
+        } else {
+            ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size, 0, TAU);
+            ctx.fill();
+        }
+    }
+
+    for (const body of bodies) {
+        const p = project(body.x, body.y, body.z);
+        const size = Math.abs(body.mass)*0.15*p.scale*body.life;
+        if (body.type === 'blackhole') {
+            ctx.globalCompositeOperation = 'source-over';
+            const grad = ctx.createRadialGradient(p.x,p.y,0, p.x,p.y,size);
+            grad.addColorStop(0, `rgba(0,0,0,${body.life})`);
+            grad.addColorStop(0.5, `rgba(20,0,40,${body.life*0.5})`);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(p.x,p.y,size,0,TAU); ctx.fill();
+            ctx.globalCompositeOperation = 'lighter';
+            const pal = PALETTES[state.palette];
+            ctx.strokeStyle = `rgba(${pal.a[0]},${pal.a[1]},${pal.a[2]},${body.life*0.5})`;
+            ctx.lineWidth = 2*p.scale;
+            ctx.beginPath(); ctx.arc(p.x,p.y,size*1.5,0,TAU); ctx.stroke();
+        } else if (body.type === 'wormhole') {
+            const pal = PALETTES[state.palette];
+            const grad = ctx.createRadialGradient(p.x,p.y,0, p.x,p.y,size);
+            grad.addColorStop(0, `rgba(${pal.b[0]},${pal.b[1]},${pal.b[2]},${body.life*0.3})`);
+            grad.addColorStop(0.5, `rgba(${pal.a[0]},${pal.a[1]},${pal.a[2]},${body.life*0.1})`);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(p.x,p.y,size,0,TAU); ctx.fill();
+        }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    renderOverlay();
+}
+
+function renderOverlay() {
+    octx.clearRect(0,0,W,H);
+    const vignette = octx.createRadialGradient(cX,cY,W*0.3, cX,cY,W*0.75);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
+    octx.fillStyle = vignette;
+    octx.fillRect(0,0,W,H);
+
+    if (state.mouseX > 0) {
+        octx.strokeStyle = 'rgba(255,255,255,0.08)';
+        octx.lineWidth = 0.5;
+        octx.beginPath();
+        octx.moveTo(state.mouseX-20, state.mouseY);
+        octx.lineTo(state.mouseX+20, state.mouseY);
+        octx.moveTo(state.mouseX, state.mouseY-20);
+        octx.lineTo(state.mouseX, state.mouseY+20);
+        octx.stroke();
+        octx.strokeStyle = 'rgba(108,99,255,0.2)';
+        octx.beginPath(); octx.arc(state.mouseX,state.mouseY,30,0,TAU); octx.stroke();
+    }
+}
+
+// --- UI ---
+function updateStats() {
+    document.getElementById('statParticles').textContent = particleCount.toLocaleString();
+    document.getElementById('statBodies').textContent = bodies.length;
+    document.getElementById('statEnergy').textContent = Math.round(state.totalEnergy).toLocaleString();
+}
+
+let frameCount = 0, lastFPSTime = performance.now();
+function updateFPS() {
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFPSTime >= 1000) {
+        document.getElementById('statFPS').textContent = frameCount;
+        frameCount = 0; lastFPSTime = now;
+    }
+}
+
+function notify(text) {
+    const el = document.getElementById('notification');
+    el.textContent = text;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// --- Loop ---
+let lastTime = performance.now();
+function loop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    state.camRotY += 0.001 * state.timeScale;
+    updatePhysics(dt);
+    render();
+    updateStats();
+    updateFPS();
+    updateAudioVisualizer();
+    if (state.audioOn && oscillators.length > 0) {
+        const e = Math.min(state.totalEnergy, 10000);
+        oscillators[0].osc.frequency.value = 55 + e * 0.01;
+        oscillators[1].gain.gain.value = 0.02 + e * 0.000005;
+    }
+    requestAnimationFrame(loop);
+}
+
+// --- Events ---
+canvas.addEventListener('mousedown', (e) => {
+    state.mouseDown = true; state.mouseDragX = e.clientX; state.mouseDragY = e.clientY;
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    const dx = e.clientX-state.mouseDragX, dy = e.clientY-state.mouseDragY;
+    state.mouseDown = false;
+    if (Math.sqrt(dx*dx+dy*dy) < 5) {
+        spawnAtMouse(e.clientX, e.clientY);
+        document.getElementById('centerMsg').classList.add('hidden');
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    state.mouseX = e.clientX; state.mouseY = e.clientY;
+    if (state.mouseDown) {
+        state.camRotY += (e.clientX-state.mouseDragX)*0.005;
+        state.camRotX += (e.clientY-state.mouseDragY)*0.005;
+        state.camRotX = clamp(state.camRotX, -Math.PI/2, Math.PI/2);
+        state.mouseDragX = e.clientX; state.mouseDragY = e.clientY;
+    }
+});
+
+canvas.addEventListener('wheel', (e) => {
+    state.camZoom += e.deltaY*0.5;
+    state.camZoom = clamp(state.camZoom, 100, 2000);
+    e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        for (let i = 0; i < particleCount; i++) {
+            if (pt[i]===0) continue;
+            const dist = Math.sqrt(px[i]*px[i]+py[i]*py[i]+pz[i]*pz[i])+1;
+            vx[i]+=(px[i]/dist)*3; vy[i]+=(py[i]/dist)*3; vz[i]+=(pz[i]/dist)*3;
+        }
+        playNote(220, 0.8, 'sine'); playNote(330, 0.6, 'triangle');
+        notify('COSMIC PULSE');
+    }
+    if (e.code === 'KeyR') { emitSupernova(rand(-200,200),rand(-200,200),rand(-200,200),800); notify('RANDOM SUPERNOVA'); }
+    if (e.code === 'KeyG') { bodies.push({x:0,y:0,z:0,mass:300,life:1,decay:0.001,type:'blackhole'}); notify('CENTRAL GRAVITY'); }
+    const modeKeys = {Digit1:'nebula',Digit2:'galaxy',Digit3:'blackhole',Digit4:'supernova',Digit5:'dna',Digit6:'wormhole'};
+    if (modeKeys[e.code]) setMode(modeKeys[e.code]);
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    state.mouseDragX = t.clientX; state.mouseDragY = t.clientY; state.mouseDown = true;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const t = e.touches[0]; state.mouseX = t.clientX; state.mouseY = t.clientY;
+    if (state.mouseDown) {
+        state.camRotY += (t.clientX-state.mouseDragX)*0.005;
+        state.camRotX += (t.clientY-state.mouseDragY)*0.005;
+        state.camRotX = clamp(state.camRotX, -Math.PI/2, Math.PI/2);
+        state.mouseDragX = t.clientX; state.mouseDragY = t.clientY;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+    state.mouseDown = false;
+    spawnAtMouse(state.mouseDragX, state.mouseDragY);
+    document.getElementById('centerMsg').classList.add('hidden');
+});
+
+// --- Mode ---
+function setMode(mode) {
+    state.mode = mode;
+    document.querySelectorAll('.ctrl-btn[data-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.mode===mode));
+    document.getElementById('modeLabel').textContent = mode.toUpperCase();
+    notify(`Mode: ${mode.toUpperCase()}`);
+}
+
+document.querySelectorAll('.ctrl-btn[data-mode]').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+
+document.getElementById('btnAudio').addEventListener('click', () => {
+    state.audioOn = !state.audioOn;
+    if (state.audioOn) { initAudio(); if (audioCtx.state==='suspended') audioCtx.resume(); }
+    document.getElementById('btnAudio').classList.toggle('active', state.audioOn);
+    notify(state.audioOn ? 'Audio ON' : 'Audio OFF');
+});
+
+document.getElementById('btnPalette').addEventListener('click', () => {
+    state.paletteOpen = !state.paletteOpen;
+    document.getElementById('palettePicker').classList.toggle('visible', state.paletteOpen);
+});
+
+document.querySelectorAll('.palette-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+        state.palette = swatch.dataset.palette;
+        document.querySelectorAll('.palette-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        notify(`Palette: ${swatch.dataset.palette.toUpperCase()}`);
+    });
+});
+
+document.getElementById('btnScreenshot').addEventListener('click', () => {
+    const flash = document.getElementById('flash');
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 200);
+    const tc = document.createElement('canvas'); tc.width=W; tc.height=H;
+    const tctx = tc.getContext('2d');
+    tctx.drawImage(canvas,0,0); tctx.drawImage(overlay,0,0);
+    const link = document.createElement('a');
+    link.download = `cosmos_${Date.now()}.png`; link.href = tc.toDataURL('image/png'); link.click();
+    notify('Screenshot saved');
+});
+
+document.getElementById('btnTimeSlow').addEventListener('click', () => {
+    state.timeScale = state.timeScale===1 ? 0.2 : 1;
+    document.getElementById('btnTimeSlow').classList.toggle('active', state.timeScale<1);
+    notify(state.timeScale<1 ? 'Slow Motion ON' : 'Normal Speed');
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+    let writeIdx = 0;
+    for (let i = 0; i < particleCount; i++) {
+        if (pt[i]===0) {
+            if (writeIdx!==i) {
+                px[writeIdx]=px[i];py[writeIdx]=py[i];pz[writeIdx]=pz[i];
+                vx[writeIdx]=vx[i];vy[writeIdx]=vy[i];vz[writeIdx]=vz[i];
+                pr[writeIdx]=pr[i];pg[writeIdx]=pg[i];pb[writeIdx]=pb[i];
+                pa[writeIdx]=pa[i];ps[writeIdx]=ps[i];pl[writeIdx]=pl[i];
+                pd[writeIdx]=pd[i];pt[writeIdx]=pt[i];
+            }
+            writeIdx++;
+        }
+    }
+    particleCount = writeIdx; bodies.length = 0;
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+    notify('Universe cleared');
+});
+
+// --- Init ---
+function init() {
+    spawnStars(INITIAL_STARS);
+    emitNebula(0, 0, 0, 400);
+    setTimeout(() => {
+        document.getElementById('loader').classList.add('done');
+        requestAnimationFrame(loop);
+    }, 800);
+    setTimeout(() => document.getElementById('centerMsg').classList.add('hidden'), 8000);
+}
+
+init();
+})();
+</script>
+</body>
 </html>
